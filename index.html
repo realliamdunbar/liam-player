@@ -3,121 +3,132 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Now Playing — You'll Be In My Heart</title>
+<title>You'll Be In My Heart — Player</title>
 <link rel="icon" href="Avatar.jpg" />
 <style>
   :root{
-    --bg:#071029; --muted:#9aa6b2; --glass: rgba(255,255,255,0.06);
-    --accent:#f6b55a;
+    --bg-dark:#041022;
+    --muted: rgba(230,235,240,0.48);
+    --accent: #f5b14a;
+    --glass: rgba(255,255,255,0.06);
   }
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0;font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Arial; background:var(--bg); color:#eef2f6;}
-  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .card{
+  html,body{height:100%;margin:0;font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Arial; background:#000;color:#fff}
+  /* Full-bleed player container */
+  .player {
+    min-height:100vh;
     width:100%;
-    max-width:420px;
-    border-radius:20px;
-    overflow:hidden;
     position:relative;
-    box-shadow: 0 20px 50px rgba(2,6,23,0.6);
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-    backdrop-filter: blur(6px);
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
   }
 
-  /* blurred background image */
+  /* Full background image blurred */
   .bg {
-    position:absolute; inset:0; z-index:0; background-size:cover; background-position:center;
+    position:absolute; inset:0; background-image:url('bg.jpg'); background-size:cover; background-position:center;
     filter: blur(22px) brightness(0.42);
-    transform: scale(1.05);
+    transform: scale(1.06);
+    z-index:0;
   }
-  .overlay { position:absolute; inset:0; background:linear-gradient(to top, rgba(2,6,23,0.6), rgba(2,6,23,0.12)); z-index:1; }
+  .dim { position:absolute; inset:0; background:linear-gradient(180deg, rgba(4,8,18,0.48), rgba(4,8,18,0.54)); z-index:1; }
 
-  .content { position:relative; z-index:2; padding:22px; display:flex; flex-direction:column; gap:18px; }
-
-  .topbar { display:flex; align-items:center; gap:12px }
-  .cover {
-    width:88px; height:88px; border-radius:14px; overflow:hidden; flex-shrink:0; box-shadow: 0 10px 30px rgba(1,5,20,0.6);
-    border:1px solid rgba(255,255,255,0.04);
+  /* Top bar (cover + title) */
+  .top {
+    position:absolute; top:32px; left:18px; right:18px; z-index:3; display:flex; align-items:center; gap:12px;
+    pointer-events:none;
   }
+  .cover { width:70px; height:70px; border-radius:12px; overflow:hidden; box-shadow:0 8px 28px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.06) }
   .cover img{width:100%;height:100%;object-fit:cover;display:block}
-  .meta { display:flex; flex-direction:column; gap:4px; min-width:0 }
-  .title { font-weight:700; font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
-  .artist { color:var(--muted); font-size:0.85rem }
+  .meta { pointer-events:auto; }
+  .song { font-weight:700; font-size:1.03rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+  .artist { color:var(--muted); font-size:0.86rem; margin-top:2px }
 
-  .lyricsArea { display:flex; flex-direction:column; gap:6px; padding: 6px 2px; align-items:flex-start }
-  .lyric-prev, .lyric-next { color: rgba(230,235,240,0.55); font-size:0.95rem; opacity:0.6; }
-  .lyric-current { font-size:1.5rem; font-weight:700; line-height:1.1; color:#fff; text-shadow:0 6px 30px rgba(0,0,0,0.6) }
+  /* Centered lyric block */
+  .center {
+    position:relative; z-index:3; text-align:center; width:92%; max-width:900px;
+    display:flex; flex-direction:column; gap:18px; align-items:center;
+    padding: 20px 18px;
+  }
+  .bigLyric {
+    font-size:clamp(20px,6.5vw,46px);
+    font-weight:800; line-height:1.02; letter-spacing:-0.02em;
+    color: #ffffff;
+    text-shadow: 0 12px 40px rgba(3,5,10,0.55);
+    max-width:100%;
+  }
+  .subLyric { color: rgba(255,255,255,0.72); font-size: clamp(12px,2.5vw,18px); opacity:0.86; margin-top:6px; }
 
-  .progressWrap { display:flex; flex-direction:column; gap:8px; margin-top:6px }
-  .timeRow { display:flex; justify-content:space-between; font-size:0.78rem; color:var(--muted) }
-  .progress { height:6px; background: rgba(255,255,255,0.06); border-radius:999px; overflow:hidden; position:relative; cursor:pointer }
-  .progress > .fill { position:absolute; left:0; top:0; bottom:0; width:0%; background: linear-gradient(90deg,#6be4b8,var(--accent)); border-radius:inherit; transition: width 0.12s linear; }
+  /* small lyric list behind (faint) for visual Apple-like scroll */
+  .lyricList {
+    width:100%; max-width:720px; margin-top:8px; pointer-events:none; color:rgba(255,255,255,0.08);
+    font-weight:700; line-height:1.4; letter-spacing: -0.01em;
+  }
 
-  .controls { display:flex; justify-content:center; gap:22px; align-items:center; margin-top:4px }
-  .btn { background:none; border:0; color:inherit; font-size:20px; padding:10px; cursor:pointer; opacity:0.95 }
-  .play { width:64px; height:64px; border-radius:999px; background:#ffffff; display:flex; align-items:center; justify-content:center; color:#071029; font-size:20px; box-shadow: 0 12px 28px rgba(2,6,23,0.6); }
+  /* progress bar and big central control */
+  .controlsBox { position:relative; z-index:3; width:92%; max-width:560px; margin-top:18px; display:flex;flex-direction:column;gap:14px; align-items:center }
+  .progressWrap { width:100%; display:flex; align-items:center; gap:8px }
+  .time { color:var(--muted); font-size:12px; min-width:36px; text-align:center }
+  .progress {
+    flex:1; height:6px; background: rgba(255,255,255,0.06); border-radius:999px; overflow:hidden; cursor:pointer;
+  }
+  .fill { height:100%; background: linear-gradient(90deg,#8ff0c8,var(--accent)); width:0%; transition: width 0.08s linear; }
 
-  .bottomNote { padding:12px 0 18px; text-align:center; color:var(--muted); font-size:0.82rem }
+  .playBtn {
+    width:86px; height:86px; border-radius:999px; background:#fff; color:#071022; display:flex; align-items:center; justify-content:center;
+    font-size:32px; border:none; box-shadow: 0 20px 40px rgba(2,6,23,0.6); cursor:pointer; margin-top:2px;
+  }
 
-  /* lyric scroll area for longer text - hidden on small screens */
-  .lyricScroll { max-height:120px; overflow:auto; width:100%; }
-  .lyricLine { padding:6px 0; transition: color .15s, transform .2s; color:rgba(255,255,255,0.85) }
-  .lyricLine.active { color: #fff; font-weight:700; transform: scale(1.02); color:var(--accent) }
+  /* hide any extra text or note */
+  .note { display:none; }
 
   @media (max-width:420px){
-    .card { border-radius:16px }
-    .cover { width:72px;height:72px }
-    .lyric-current{ font-size:1.25rem }
+    .top{top:16px; left:12px; right:12px}
+    .cover{width:60px;height:60px}
+    .playBtn{width:72px;height:72px;font-size:26px}
   }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card" id="card">
-      <div class="bg" id="bgImg"></div>
-      <div class="overlay"></div>
+  <div class="player" id="player">
+    <div class="bg" id="bg"></div>
+    <div class="dim"></div>
 
-      <div class="content">
-        <div class="topbar">
-          <div class="cover"><img id="coverImg" src="Avatar.jpg" alt="cover"></div>
-          <div class="meta">
-            <div class="title">You'll Be In My Heart</div>
-            <div class="artist">Phil Collins</div>
-          </div>
-          <div style="flex:1"></div>
-          <div style="color:var(--muted); font-size:0.82rem">Ethan • Now</div>
-        </div>
-
-        <div class="lyricsArea">
-          <div class="lyric-prev" id="lyricPrev">&nbsp;</div>
-          <div class="lyric-current" id="lyricCurrent">Tap ▶ to play</div>
-          <div class="lyric-next" id="lyricNext">&nbsp;</div>
-        </div>
-
-        <div class="lyricScroll" id="lyricScroll"></div>
-
-        <div class="progressWrap">
-          <div class="timeRow"><div id="timeLeft">0:00</div><div id="timeRight">0:00</div></div>
-          <div class="progress" id="progressBar">
-            <div class="fill" id="progressFill"></div>
-          </div>
-        </div>
-
-        <div class="controls">
-          <button class="btn" id="btnPrev" title="Previous">⟲</button>
-          <button class="play" id="btnPlay" title="Play/Pause">▶</button>
-          <button class="btn" id="btnNext" title="Next">⟳</button>
-        </div>
-
-        <div class="bottomNote">Apple-style player • Live lyrics • Hosted on GitHub Pages</div>
+    <div class="top">
+      <div class="cover"><img src="Avatar.jpg" alt="Avatar"></div>
+      <div class="meta">
+        <div class="song">You'll Be In My Heart</div>
+        <div class="artist">Phil Collins</div>
       </div>
+    </div>
+
+    <div class="center">
+      <div id="bigLyric" class="bigLyric">Tap ▶ to play</div>
+      <div id="subLyric" class="subLyric">&nbsp;</div>
+
+      <!-- faint stacked lyrics behind -->
+      <div id="lyricList" class="lyricList" aria-hidden="true">
+        <!-- filled by JS -->
+      </div>
+
+      <div class="controlsBox">
+        <div class="progressWrap">
+          <div class="time" id="leftTime">0:00</div>
+          <div class="progress" id="progressBar"><div class="fill" id="progressFill"></div></div>
+          <div class="time" id="rightTime">0:00</div>
+        </div>
+
+        <button id="playBtn" class="playBtn" aria-label="Play">▶</button>
+      </div>
+
     </div>
   </div>
 
   <audio id="audio" src="song.mp3" preload="metadata"></audio>
 
 <script>
-/* ====== Full lyrics array from your text (timestamps in seconds) ====== */
+/* Lyrics list you gave — timestamps in seconds */
 const LYRICS = [
   {t:10.59, text:"Come stop your crying, it will be alright"},
   {t:15.56, text:"Just take my hand, hold it tight"},
@@ -166,133 +177,103 @@ const LYRICS = [
 ];
 
 const audio = document.getElementById('audio');
-const playBtn = document.getElementById('btnPlay');
-const prevBtn = document.getElementById('btnPrev');
-const nextBtn = document.getElementById('btnNext');
-const lyricPrev = document.getElementById('lyricPrev');
-const lyricCurr = document.getElementById('lyricCurrent');
-const lyricNext = document.getElementById('lyricNext');
-const timeLeft = document.getElementById('timeLeft');
-const timeRight = document.getElementById('timeRight');
+const playBtn = document.getElementById('playBtn');
+const leftTime = document.getElementById('leftTime');
+const rightTime = document.getElementById('rightTime');
 const progressFill = document.getElementById('progressFill');
 const progressBar = document.getElementById('progressBar');
-const bgImg = document.getElementById('bgImg');
-const coverImg = document.getElementById('coverImg');
-const lyricScroll = document.getElementById('lyricScroll');
+const bigLyric = document.getElementById('bigLyric');
+const subLyric = document.getElementById('subLyric');
+const lyricList = document.getElementById('lyricList');
 
-let activeIndex = -1;
-let isPlaying = false;
+let active = -1;
+let playing = false;
 
-/* build lyric scroll lines */
-function buildLyricScroll(){
-  lyricScroll.innerHTML = '';
-  for(let i=0;i<LYRICS.length;i++){
-    const d = document.createElement('div');
-    d.className = 'lyricLine';
-    d.dataset.index = i;
-    d.textContent = LYRICS[i].text;
-    lyricScroll.appendChild(d);
-  }
-}
-buildLyricScroll();
-
-/* set background image from bg.jpg or Avatar.jpg */
-(function setBg(){
-  fetch('bg.jpg', {method:'HEAD'}).then(r=>{
-    if(r.ok){ bgImg.style.backgroundImage = "url('bg.jpg')"; }
-    else { bgImg.style.backgroundImage = "url('Avatar.jpg')"; }
-  }).catch(e=>{
-    bgImg.style.backgroundImage = "url('Avatar.jpg')";
-  });
+/* populate faint lyric list (visual only) */
+(function fillLyricList(){
+  lyricList.innerHTML = LYRICS.map(l=> `<div>${l.text}</div>`).join('\n');
 })();
 
-function fmt(s){
+/* format time mm:ss */
+function fmtTime(s){
   if(!s || isNaN(s)) return '0:00';
   const m = Math.floor(s/60);
   const sec = Math.floor(s%60).toString().padStart(2,'0');
   return m + ':' + sec;
 }
 
-audio.addEventListener('loadedmetadata', ()=>{
-  timeRight.textContent = fmt(audio.duration);
+/* update UI on metadata */
+audio.addEventListener('loadedmetadata', () => {
+  rightTime.textContent = fmtTime(audio.duration);
 });
 
-audio.addEventListener('timeupdate', ()=>{
+/* time update and lyric sync */
+audio.addEventListener('timeupdate', () => {
   const t = audio.currentTime;
-  timeLeft.textContent = fmt(t);
+  leftTime.textContent = fmtTime(t);
   const pct = (t / (audio.duration || 1)) * 100;
   progressFill.style.width = pct + '%';
-  syncLyrics(t);
+  syncLyric(t);
 });
 
-function syncLyrics(cur){
+/* lyric sync logic: pick lyric block where t belongs */
+function syncLyric(cur){
   let idx = -1;
   for(let i=0;i<LYRICS.length;i++){
     const now = LYRICS[i].t;
     const next = (i+1<LYRICS.length) ? LYRICS[i+1].t : Infinity;
     if(cur >= now && cur < next) { idx = i; break; }
   }
-  if(idx === activeIndex) return;
-  activeIndex = idx;
-  if(idx < 0){
-    lyricPrev.textContent = '';
-    lyricCurr.textContent = "Tap ▶ to play";
-    lyricNext.textContent = '';
-    clearActive();
+  if(idx !== active){
+    active = idx;
+    if(idx < 0){
+      bigLyric.textContent = "Tap ▶ to play";
+      subLyric.textContent = "";
+    } else {
+      bigLyric.textContent = LYRICS[idx].text;
+      subLyric.textContent = (idx+1<LYRICS.length) ? LYRICS[idx+1].text : "";
+    }
+  }
+}
+
+/* play/pause behaviour */
+playBtn.addEventListener('click', async () => {
+  if(audio.paused){
+    try{
+      await audio.play();
+      playing = true;
+      playBtn.textContent = '⏸';
+    }catch(e){
+      console.error('play failed', e);
+      alert('Play failed — open page from GitHub Pages or local with a static server.');
+    }
   } else {
-    lyricCurr.textContent = LYRICS[idx].text || '';
-    lyricPrev.textContent = idx>0 ? LYRICS[idx-1].text : '';
-    lyricNext.textContent = idx<LYRICS.length-1 ? LYRICS[idx+1].text : '';
-    setActiveLine(idx);
-  }
-}
-
-function clearActive(){
-  const els = lyricScroll.querySelectorAll('.lyricLine');
-  els.forEach(el => el.classList.remove('active'));
-}
-
-function setActiveLine(i){
-  clearActive();
-  const el = lyricScroll.querySelector(`.lyricLine[data-index="${i}"]`);
-  if(el){
-    el.classList.add('active');
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-}
-
-/* controls */
-playBtn.addEventListener('click', async ()=>{
-  if(audio.paused){ 
-    try { await audio.play(); isPlaying = true; playBtn.textContent = '⏸'; }
-    catch(e){ console.error(e); alert('Play failed: check file and origin (Pages)'); }
-  } else {
-    audio.pause(); isPlaying = false; playBtn.textContent = '▶';
+    audio.pause();
+    playing = false;
+    playBtn.textContent = '▶';
   }
 });
 
-prevBtn.addEventListener('click', ()=>{
-  if(activeIndex>0) audio.currentTime = Math.max(0, LYRICS[activeIndex-1].t + 0.05);
-  else audio.currentTime = 0;
-});
-
-nextBtn.addEventListener('click', ()=>{
-  if(activeIndex < LYRICS.length-1) audio.currentTime = LYRICS[Math.min(activeIndex+1, LYRICS.length-1)].t + 0.05;
-  else audio.currentTime = audio.duration - 0.2;
-});
-
+/* progress seek */
 progressBar.addEventListener('click', (e)=>{
-  const rect = progressBar.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const pct = Math.min(Math.max(x / rect.width, 0), 1);
-  if(!isNaN(audio.duration)){ audio.currentTime = pct * audio.duration; }
+  const r = progressBar.getBoundingClientRect();
+  const x = (e.clientX - r.left);
+  const pct = Math.min(Math.max(x / r.width, 0), 1);
+  if(!isNaN(audio.duration)) audio.currentTime = pct * audio.duration;
 });
 
-/* initial lyric */
-lyricCurr.textContent = "Tap ▶ to play";
+/* when audio ends, reset */
+audio.addEventListener('ended', ()=>{
+  playing = false;
+  playBtn.textContent = '▶';
+  active = -1;
+  bigLyric.textContent = "Tap ▶ to play";
+  subLyric.textContent = "";
+});
 
-audio.addEventListener('error', (ev)=>{
-  console.error('Audio error', audio.error);
+/* quick fallback: if audio can't load, console the error */
+audio.addEventListener('error', (e)=>{
+  console.error('audio error', audio.error);
 });
 </script>
 </body>

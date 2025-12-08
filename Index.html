@@ -1,1 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Liam test player</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#111;color:#eee}
+    .card{width:min(720px,92vw);padding:28px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));box-shadow:0 8px 30px rgba(0,0,0,.6);backdrop-filter: blur(6px)}
+    h1{margin:0 0 12px;font-size:20px}
+    p{margin:0 0 18px;color:#bbb}
+    button{padding:12px 18px;border-radius:10px;border:0;background:#1db954;color:white;font-weight:600;cursor:pointer}
+    .small{font-size:13px;color:#999;margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Simple audio test — You'll Be In My Heart</h1>
+    <p>File expected: <strong>song.mp3</strong> (must be in same folder as this page)</p>
 
+    <audio id="player" preload="metadata" src="song.mp3"></audio>
+
+    <div>
+      <button id="playBtn">Play / Pause</button>
+      <span id="status" class="small">Status: idle</span>
+    </div>
+
+    <div class="small" id="debug">Debug: —</div>
+  </div>
+
+<script>
+  const btn = document.getElementById('playBtn');
+  const a = document.getElementById('player');
+  const dbg = document.getElementById('debug');
+  const status = document.getElementById('status');
+
+  function log(s){
+    dbg.textContent = 'Debug: ' + s;
+    console.log('Debug:', s);
+  }
+
+  a.addEventListener('error', (e) => {
+    const err = a.error;
+    const code = err ? err.code : 'no element error';
+    log('Audio error code: ' + code + ' (see console for details)');
+    console.error(err);
+    status.textContent = 'Status: error';
+  });
+
+  a.addEventListener('canplay', () => { log('Audio can play'); status.textContent = 'Status: ready'; });
+  a.addEventListener('play', () => status.textContent = 'Status: playing');
+  a.addEventListener('pause', () => status.textContent = 'Status: paused');
+
+  btn.onclick = async () => {
+    try {
+      if (a.paused) {
+        await a.play();
+        log('play() success');
+      } else {
+        a.pause();
+        log('paused');
+      }
+    } catch(err) {
+      log('play() failed - ' + (err && err.message));
+      console.error(err);
+    }
+  };
+
+  // Extra: show file URL being attempted
+  log('Attempting to load: ' + a.src);
+</script>
+</body>
+</html>

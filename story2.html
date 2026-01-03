@@ -1,170 +1,141 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Story · You'll Be In My Heart</title>
-
+<meta charset="UTF-8">
+<title>Life Simulation</title>
 <style>
-  :root{
-    --muted: rgba(255,255,255,0.38);
-    --card-border: rgba(255,255,255,0.06);
-  }
+    body {
+        background: #0e0e11;
+        color: #e5e5e5;
+        font-family: monospace;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
 
-  html,body{
-    height:100%;
-    margin:0;
-    background:#000;
-    color:#fff;
-    font-family:-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
+    .sim {
+        width: 380px;
+        padding: 20px;
+        background: #16161d;
+        border-radius: 10px;
+        box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    }
 
-  /* fullscreen blurred background using bg.jpg */
-  .bg{
-    position:fixed;
-    inset:0;
-    background:url("bg.jpg") center/cover no-repeat;
-    filter:blur(26px) brightness(0.55);
-    transform:scale(1.03);
-    z-index:0;
-  }
+    h2 {
+        margin-top: 0;
+        text-align: center;
+        font-weight: normal;
+    }
 
-  .overlay{
-    position:fixed;
-    inset:0;
-    background:linear-gradient(180deg, rgba(0,0,0,0.20), rgba(0,0,0,0.45));
-    z-index:1;
-  }
+    .bar {
+        height: 12px;
+        background: #333;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
 
-  .wrap{
-    position:relative;
-    z-index:2;
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:26px;
-    box-sizing:border-box;
-  }
+    .fill {
+        height: 100%;
+        transition: width 0.3s;
+    }
 
-  /* main card */
-  .card{
-    width:min(940px,92vw);
-    border-radius:22px;
-    padding:26px 26px 18px;
-    background:rgba(255,255,255,0.02);
-    backdrop-filter:blur(8px) saturate(1.05);
-    -webkit-backdrop-filter:blur(8px) saturate(1.05);
-    border:1px solid var(--card-border);
-    box-shadow:0 20px 60px rgba(0,0,0,0.65);
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-  }
+    .energy { background: #7dd3fc; }
+    .noise { background: #f87171; }
 
-  .lyrics-box{
-    padding:18px 22px;
-    border-radius:14px;
-    background:rgba(255,255,255,0.03);
-    border:1px solid rgba(255,255,255,0.02);
-    box-shadow:inset 0 -2px 14px rgba(0,0,0,0.32);
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
+    button {
+        width: 100%;
+        margin-top: 8px;
+        padding: 10px;
+        background: #222;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        border-radius: 6px;
+    }
 
-  .line{
-    font-weight:800;
-    font-size:clamp(20px,4.6vw,32px);
-    line-height:1.08;
-    text-shadow:0 6px 26px rgba(0,0,0,0.7);
-  }
+    button:hover {
+        background: #333;
+    }
 
-  .meta-row{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    padding-top:4px;
-  }
-
-  .thumb{
-    width:56px;
-    height:56px;
-    border-radius:10px;
-    overflow:hidden;
-    background:#222;
-    border:1px solid rgba(255,255,255,0.06);
-    box-shadow:0 6px 18px rgba(0,0,0,0.55);
-    flex-shrink:0;
-  }
-  .thumb img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-  }
-
-  .meta-text{
-    display:flex;
-    flex-direction:column;
-    gap:2px;
-  }
-
-  .title{
-    font-weight:700;
-    font-size:16px;
-  }
-
-  .artist{
-    font-size:13px;
-    color:var(--muted);
-  }
-
-  .meta-right{
-    margin-left:auto;
-    font-size:12px;
-    padding:6px 10px;
-    border-radius:999px;
-    color:var(--muted);
-    background:rgba(255,255,255,0.02);
-    border:1px solid rgba(255,255,255,0.03);
-  }
+    .log {
+        margin-top: 12px;
+        font-size: 13px;
+        height: 80px;
+        overflow-y: auto;
+        color: #aaa;
+    }
 </style>
 </head>
-
 <body>
-<div class="bg"></div>
-<div class="overlay"></div>
 
-<!-- autoplay audio, hidden -->
-<audio autoplay src="song.mp3"></audio>
+<div class="sim">
+    <h2>Life (Current State)</h2>
 
-<div class="wrap">
-  <div class="card">
+    Energy
+    <div class="bar"><div id="energyBar" class="fill energy"></div></div>
 
-    <div class="lyrics-box">
-      <div class="line">When destiny calls you</div>
-      <div class="line">You must be strong</div>
-      <div class="line">(You gotta be strong)</div>
-      <div class="line">I may not be with you,</div>
-      <div class="line">but you got to hold on</div>
-      <div class="line">They'll see in time, I know</div>
-    </div>
+    Noise
+    <div class="bar"><div id="noiseBar" class="fill noise"></div></div>
 
-    <div class="meta-row">
-      <div class="thumb">
-        <img src="Avatar.jpg" alt="Cover art">
-      </div>
+    <button onclick="smallAction()">Do a small action</button>
+    <button onclick="consume()">Escape into phone/music</button>
+    <button onclick="wait()">Wait</button>
 
-      <div class="meta-text">
-        <div class="title">You'll Be In My Heart</div>
-        <div class="artist">Phil Collins</div>
-      </div>
-
-      <div class="meta-right">Apple Music</div>
-    </div>
-
-  </div>
+    <div class="log" id="log"></div>
 </div>
+
+<script>
+let energy = 60;
+let noise = 40;
+
+const energyBar = document.getElementById("energyBar");
+const noiseBar = document.getElementById("noiseBar");
+const log = document.getElementById("log");
+
+function update() {
+    energy = Math.max(0, Math.min(100, energy));
+    noise = Math.max(0, Math.min(100, noise));
+
+    energyBar.style.width = energy + "%";
+    noiseBar.style.width = noise + "%";
+}
+
+function write(text) {
+    log.innerHTML += text + "<br>";
+    log.scrollTop = log.scrollHeight;
+}
+
+function smallAction() {
+    energy += 8;
+    noise -= 6;
+    write("You did something small. It mattered.");
+    update();
+}
+
+function consume() {
+    energy -= 4;
+    noise -= 2;
+    write("You escaped for a moment. Relief fades fast.");
+    update();
+}
+
+function wait() {
+    energy -= 6;
+    noise += 6;
+    write("You waited. Nothing changed.");
+    update();
+}
+
+setInterval(() => {
+    energy -= 1;
+    noise += 1;
+    update();
+}, 3000);
+
+update();
+</script>
+
 </body>
 </html>
